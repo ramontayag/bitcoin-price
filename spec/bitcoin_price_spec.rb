@@ -19,6 +19,10 @@ describe BitcoinPrice, ".fetch" do
 
   context "with caching" do
     context "has not fetched prices before" do
+      before do
+        described_class.redis.set("bitcoin_price_cache_expires_at", nil)
+      end
+
       it "fetches the prices" do
         prices = {
           "ask" => 10.0,

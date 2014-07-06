@@ -51,7 +51,8 @@ module BitcoinPrice
   end
 
   def self.cache_alive?
-    Time.now < Time.parse(redis.get("bitcoin_price_cache_expires_at"))
+    expires_at = redis.get("bitcoin_price_cache_expires_at")
+    expires_at != "" && Time.now < Time.parse(expires_at)
   end
 
   def self.cache_config
