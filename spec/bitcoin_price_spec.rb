@@ -21,6 +21,10 @@ describe BitcoinPrice, ".fetch" do
     context "has not fetched prices before" do
       before do
         described_class.redis.set("bitcoin_price_cache_expires_at", nil)
+        allow(BitcoinPrice::CheckCacheExpiry).
+          to receive(:execute).
+          with("").
+          and_return(true)
       end
 
       it "fetches the prices" do
@@ -44,6 +48,12 @@ describe BitcoinPrice, ".fetch" do
             redis_url: "redis://127.0.0.1:6379/0",
           }
         end
+
+        expired_at = Time.now - 5
+        allow(BitcoinPrice::CheckCacheExpiry).to receive(:execute).
+          with(expired_at.to_s).
+          and_return(true)
+        described_class.redis.set "bitcoin_price_cache_expires_at", expired_at
       end
 
       it "fetches the prices and updates the cache expiry time" do
@@ -56,7 +66,6 @@ describe BitcoinPrice, ".fetch" do
           "bitcoin_price_cached_prices",
           cached_prices,
         )
-        described_class.redis.set "bitcoin_price_cache_expires_at", Time.now - 5
         fresh_prices = {
           "ask" => 10.0,
           "bid" => 11.0,
@@ -70,6 +79,15 @@ describe BitcoinPrice, ".fetch" do
     end
 
     context "cache has not expired" do
+      before do
+        expired_at = Time.now + 5
+        described_class.redis.set("bitcoin_price_cache_expires_at", expired_at)
+        allow(BitcoinPrice::CheckCacheExpiry).
+          to receive(:execute).
+          with(expired_at.to_s).
+          and_return(false)
+      end
+
       it "returns the cached prices" do
         cached_prices = {
           "ask" => 20.0,
@@ -80,7 +98,6 @@ describe BitcoinPrice, ".fetch" do
           "bitcoin_price_cached_prices",
           cached_prices,
         )
-        described_class.redis.set "bitcoin_price_cache_expires_at", Time.now + 5
         expect(described_class.fetch).to eq cached_prices
       end
     end

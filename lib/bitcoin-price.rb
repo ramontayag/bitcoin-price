@@ -1,7 +1,10 @@
 require 'curb'
 require 'oj'
+require "active_support/inflections"
+require "active_support/core_ext/integer"
 require "bitcoin-price/fetcher"
 require "bitcoin-price/cache_config"
+require "bitcoin-price/check_cache_expiry"
 
 module BitcoinPrice
 
@@ -52,7 +55,7 @@ module BitcoinPrice
 
   def self.cache_alive?
     expires_at = redis.get("bitcoin_price_cache_expires_at")
-    expires_at != "" && Time.now < Time.parse(expires_at)
+    !CheckCacheExpiry.execute(expires_at)
   end
 
   def self.cache_config
