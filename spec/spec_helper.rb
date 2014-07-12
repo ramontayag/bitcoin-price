@@ -19,7 +19,8 @@ RSpec.configure do |c|
         redis_url: "redis://127.0.0.1:6379/0",
       }
     end
-    BitcoinPrice.redis.set("bitcoin_price", nil)
+    BitcoinPrice.redis.hdel("bitcoin_price_cached_prices", ["last", "ask", "bid"])
+    BitcoinPrice.redis.del("bitcoin_price_cache_expires_at")
     Timecop.return
   end
 end

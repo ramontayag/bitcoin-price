@@ -5,6 +5,7 @@ require "active_support/core_ext/integer"
 require "bitcoin-price/fetcher"
 require "bitcoin-price/cache_config"
 require "bitcoin-price/check_cache_expiry"
+require "bitcoin-price/set_cache"
 
 module BitcoinPrice
 
@@ -33,13 +34,11 @@ module BitcoinPrice
       end
       cached_prices
     else
+      prices = Fetcher.fetch(url)
       if cache?
-        redis.set(
-          "bitcoin_price_cache_expires_at",
-          Time.now + cache_config.lifespan_in_minutes * 60,
-        )
+        SetCache.execute(prices)
       end
-      Fetcher.fetch(url)
+      prices
     end
   end
 

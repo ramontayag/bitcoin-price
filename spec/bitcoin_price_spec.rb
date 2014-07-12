@@ -56,25 +56,15 @@ describe BitcoinPrice, ".fetch" do
         described_class.redis.set "bitcoin_price_cache_expires_at", expired_at
       end
 
-      it "fetches the prices and updates the cache expiry time" do
-        cached_prices = {
-          "ask" => 20.0,
-          "bid" => 21.0,
-          "last" => 22.0,
-        }
-        described_class.redis.mapped_hmset(
-          "bitcoin_price_cached_prices",
-          cached_prices,
-        )
+      it "fetches the prices and sets the cache" do
         fresh_prices = {
           "ask" => 10.0,
           "bid" => 11.0,
           "last" => 12.0,
         }
         allow(BitcoinPrice::Fetcher).to receive(:fetch).and_return(fresh_prices)
+        expect(BitcoinPrice::SetCache).to receive(:execute).with(fresh_prices)
         expect(described_class.fetch).to eq fresh_prices
-        expires_at = described_class.redis.get("bitcoin_price_cache_expires_at")
-        expect(expires_at).to eq (Time.now + 3 * 60).to_s
       end
     end
 
